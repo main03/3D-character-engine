@@ -1,0 +1,29 @@
+[project]
+name = "character-engine-workspace"
+version = "0.1.0"
+requires-python = ">=3.11,<3.13"
+dependencies = ["charengine", "charengine-server"]
+
+[tool.uv]
+package = false
+
+[tool.uv.workspace]
+members = ["engine", "server"]
+
+[tool.uv.sources]
+charengine = { workspace = true }
+charengine-server = { workspace = true }
+torch = { index = "pytorch-cpu" }
+
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[dependency-groups]
+dev = ["pytest>=8", "httpx>=0.27"]
+
+[tool.pytest.ini_options]
+pythonpath = ["server", "engine", "engine/tests"]
+addopts = "--import-mode=importlib"
+testpaths = ["engine/tests", "server/tests"]
