@@ -9,13 +9,16 @@ from PIL import Image
 
 from ..config import PipelineConfig
 from ..errors import ReconstructionError
-from .base import ProgressFn, Reconstruction
+from .base import ProgressFn, Reconstruction, ViewCamera
 
 # TripoSR is Z-up and faces -X; rotate to glTF's Y-up, facing +Z.
 _TO_CANONICAL = trimesh.transformations.rotation_matrix(-np.pi / 2, [0, 1, 0]) @ trimesh.transformations.rotation_matrix(
     -np.pi / 2, [1, 0, 0]
 )
 _FROM_CANONICAL = np.linalg.inv(_TO_CANONICAL)
+
+# Input-view camera, fitted by matching projected mesh silhouettes to input masks (IoU ~0.97).
+INPUT_VIEW = ViewCamera(distance=1.8, fov_deg=40.0)
 
 
 class TripoSRReconstructor:
@@ -67,4 +70,4 @@ class TripoSRReconstructor:
                     out[i : i + step] = model.renderer.query_triplane(model.decoder, pts, scene_code)["color"].cpu().numpy()
             return out
 
-        return Reconstruction(mesh=mesh, color_fn=color_fn)
+        return Reconstruction(mesh=mesh, color_fn=color_fn, view=INPUT_VIEW)

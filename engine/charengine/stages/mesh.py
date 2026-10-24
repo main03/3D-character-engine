@@ -14,6 +14,10 @@ def clean_mesh(mesh: trimesh.Trimesh, config: PipelineConfig) -> trimesh.Trimesh
         keep = [p for p in parts if len(p.faces) >= config.min_component_ratio * largest]
         mesh = trimesh.util.concatenate(keep)
 
+    if config.smoothing_iterations:
+        # Taubin smoothing removes marching-cubes stair-stepping without shrinking the volume.
+        trimesh.smoothing.filter_taubin(mesh, lamb=0.5, nu=-0.53, iterations=config.smoothing_iterations)
+
     if len(mesh.faces) > config.target_faces:
         mesh = mesh.simplify_quadric_decimation(face_count=config.target_faces)
 

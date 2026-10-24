@@ -49,4 +49,7 @@ The character should be usable in Three.js, React Three Fiber, Blender, and othe
 - Dev machine has no CUDA GPU and no C++ compiler: torch is CPU-only, TripoSR is vendored in
   `engine/charengine/vendor/tsr` with PyMCubes instead of torchmcubes (see its NOTICE.md).
 - Canonical mesh frame: Y-up, character faces +Z; placed standing on y=0 with height `target_height`.
+- TripoSR input camera in the canonical frame: (0, 0, 1.8), FOV 40°, fitted by silhouette IoU; photo projection
+  (`stages/projection.py`) depends on it. Re-fit it if the reconstructor or framing changes.
+- In R3F, don't put drei `<Html>` in a Suspense fallback (React 19 unmount race); use a DOM overlay.
 - Background removal uses `isnet-general-use` (Apache-2.0); rembg's default `bria-rmbg` is non-commercial.

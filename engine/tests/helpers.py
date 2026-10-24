@@ -4,7 +4,7 @@ import numpy as np
 import trimesh
 from PIL import Image
 
-from charengine.reconstruct import Reconstruction
+from charengine.reconstruct import Reconstruction, ViewCamera
 
 
 class SphereReconstructor:
@@ -15,7 +15,7 @@ class SphereReconstructor:
     def reconstruct(self, image, progress):
         progress(1.0)
         mesh = trimesh.creation.icosphere(subdivisions=4, radius=0.4)
-        return Reconstruction(mesh=mesh, color_fn=lambda p: np.clip(p + 0.5, 0, 1))
+        return Reconstruction(mesh=mesh, color_fn=lambda p: np.clip(p + 0.5, 0, 1), view=ViewCamera(1.8, 40.0))
 
 
 def cutout(rgba: Image.Image) -> Image.Image:

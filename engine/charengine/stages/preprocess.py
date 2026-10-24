@@ -2,6 +2,7 @@
 
 import io
 import threading
+from dataclasses import dataclass
 
 import numpy as np
 from PIL import Image, ImageOps, UnidentifiedImageError
@@ -68,8 +69,14 @@ def isolate_subject(image: Image.Image, remover: BackgroundRemover) -> Image.Ima
     return remover(image.convert("RGB")).convert("RGBA")
 
 
-def frame_subject(rgba: Image.Image, config: PipelineConfig) -> Image.Image:
-    """Crop to the subject, pad to a square with the configured margin, and composite on grey.
+@dataclass
+class FramedSubject:
+    model_input: Image.Image  # RGB, model_input_size square, subject on 0.5 grey
+    cutout: Image.Image  # RGBA, same framing at up to cutout_max_size, for photo projection
+
+
+def frame_subject(rgba: Image.Image, config: PipelineConfig) -> FramedSubject:
+    """Crop to the subject and pad to a centred square with the configured margin.
 
     TripoSR expects the object centred on a neutral (0.5 grey) background.
     """
@@ -87,6 +94,9 @@ def frame_subject(rgba: Image.Image, config: PipelineConfig) -> Image.Image:
 
     rgb = canvas[..., :3].astype(np.float32) / 255.0
     a = canvas[..., 3:4].astype(np.float32) / 255.0
-    composited = rgb * a + 0.5 * (1.0 - a)
-    out = Image.fromarray((composited * 255.0).round().astype(np.uint8))
-    return out.resize((config.model_input_size, config.model_input_size), Image.LANCZOS)
+    composited = Image.fromarray(((rgb * a + 0.5 * (1.0 - a)) * 255.0).round().astype(np.uint8))
+    size = config.model_input_size
+    cutout = Image.fromarray(canvas, "RGBA")
+    if side > config.cutout_max_size:
+        cutout = cutout.resize((config.cutout_max_size,) * 2, Image.LANCZOS)
+    return FramedSubject(model_input=composited.resize((size, size), Image.LANCZOS), cutout=cutout)

@@ -74,11 +74,12 @@ class CharacterPipeline:
 
         recon = timed(
             "reconstructing",
-            lambda: self.reconstructor.reconstruct(framed, lambda f: report("reconstructing", f)),
+            lambda: self.reconstructor.reconstruct(framed.model_input, lambda f: report("reconstructing", f)),
         )
         mesh = timed("processing_mesh", lambda: mesh_stage.clean_mesh(recon.mesh, cfg))
         placement = mesh_stage.placement_transform(mesh, cfg)
-        textured = timed("texturing", lambda: texture.bake_texture(mesh, recon.color_fn, cfg))
+        textured = timed("texturing", lambda: texture.bake_texture(mesh, recon, cfg, framed.cutout))
+        del framed
         glb = timed("exporting", lambda: export.export_glb(textured, placement, cfg))
 
         glb_report = validate.validate_glb(glb, cfg.max_glb_bytes)
@@ -86,13 +87,16 @@ class CharacterPipeline:
             raise ExportValidationError("Generated GLB failed validation: " + "; ".join(glb_report.errors))
 
         warnings = [
-            "Likeness is not yet evaluated: TripoSR reconstructs overall shape and colour from a single view; "
-            "fine facial detail and the unseen back side are approximations."
+            "Single-photo reconstruction: the front is textured from your photo, but face geometry is coarse "
+            "and the sides and back are the model's best guess."
         ]
+        if cfg.project_photo and recon.view is not None and textured.photo_coverage < 0.05:
+            warnings.append("Very little of the photo could be projected onto the model; the face may look blurry.")
+        stats = {**glb_report.stats, "photo_coverage": round(textured.photo_coverage, 3)}
         return GenerationResult(
             glb=glb,
             reconstructor=self.reconstructor.name,
-            stats=glb_report.stats,
+            stats=stats,
             timings=timings,
             warnings=warnings,
         )

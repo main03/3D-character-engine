@@ -3,14 +3,15 @@
 Upload a photo of a person and get a textured 3D character as a `.glb`, previewed in the browser.
 
 ```
-photo ─▶ validate ─▶ remove background ─▶ TripoSR (image→3D) ─▶ clean & decimate ─▶ UV unwrap + bake texture ─▶ GLB ─▶ validate
+photo ─▶ validate ─▶ remove background ─▶ TripoSR (image→3D) ─▶ smooth, clean & decimate ─▶ UV unwrap ─▶ bake texture (photo projected on visible front + model colours elsewhere) ─▶ GLB ─▶ validate
 ```
 
 ## Status
 
-Phase 2 prototype. The reconstruction is a genuine single-image reconstruction (TripoSR), but
-**facial likeness is not yet evaluated or specifically optimised**: expect correct overall shape,
-skin tone, clothing and hair colour, with soft facial detail and a guessed back side. Phase 3 covers face work.
+Phase 2 prototype, plus a first Phase 3 step. Shape comes from TripoSR. The camera-facing surface is textured by
+projecting the original photo through TripoSR's input camera (fitted at distance 1.8, FOV 40°), so eyes, brows and
+skin come from the photo itself instead of the model's blurry 512 px prediction. **Face geometry is still coarse**
+and the sides and back are the model's guess. Likeness has not been measured yet.
 
 ## Layout
 
@@ -55,7 +56,7 @@ Uploads are held in memory only and discarded once processed; results are kept i
 
 ## Output
 
-A single GLB: one mesh (~40k triangles) with normals and UVs, one PBR material with a 1024² base-colour
+A single GLB: one mesh (~40k triangles) with normals and UVs, one PBR material with a 2048² base-colour
 texture. Y-up, facing +Z, feet/base at y = 0, height 1.0. Every file is validated (structure, attributes,
 embedded texture, finite bounds) before it is returned.
 

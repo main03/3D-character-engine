@@ -52,3 +52,21 @@ def test_rejects_image_without_subject(pipeline):
 def test_rejects_corrupt_glb():
     assert not validate_glb(b"glTF" + b"\0" * 20, 10**6).ok
     assert not validate_glb(b"nope", 10**6).ok
+
+
+def test_photo_projection_colours_front_not_back(pipeline):
+    """A solid red photo must colour the camera-facing side of the sphere, not the hidden back."""
+    from PIL import Image
+
+    from charengine.reconstruct import ViewCamera
+    from charengine.stages import projection
+
+    sphere = trimesh.creation.icosphere(subdivisions=4, radius=0.4)
+    front = np.array([[0.0, 0.0, 0.4]])
+    back = np.array([[0.0, 0.0, -0.4]])
+    pts = np.vstack([front, back])
+    normals = pts / np.linalg.norm(pts, axis=1, keepdims=True)
+    photo = Image.new("RGBA", (512, 512), (255, 0, 0, 255))
+    colors, weights = projection.project_photo(pts, normals, sphere.vertices, sphere.faces, ViewCamera(1.8, 40.0), photo)
+    assert weights[0] > 0.99 and colors[0, 0] > 0.99
+    assert weights[1] == 0.0
